@@ -37,12 +37,6 @@ export default function HomePage() {
     setCurrentDate(new Date())
   }
 
-  const goToTomorrow = () => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    setCurrentDate(tomorrow)
-  }
-
   const toggleFavorite = () => {
     const dateStr = formatDate(currentDate)
     const newFavorites = favorites.includes(dateStr) ? favorites.filter((d) => d !== dateStr) : [...favorites, dateStr]
@@ -67,15 +61,6 @@ export default function HomePage() {
 
   // Vérifier si la date est dans les favoris
   const isFavorite = favorites.includes(formatDate(currentDate))
-
-  // Vérifier si c'est aujourd'hui ou demain
-  const today = new Date()
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  
-  const isToday = formatDate(currentDate) === formatDate(today)
-  const isTomorrow = formatDate(currentDate) === formatDate(tomorrow)
-  const isYesterday = formatDate(currentDate) === formatDate(new Date(today.getTime() - 24 * 60 * 60 * 1000))
 
   if (loading) {
     return (
@@ -122,38 +107,13 @@ export default function HomePage() {
             <h1 className="text-2xl lg:text-3xl font-bold text-liturgical-primary">
               {formatLiturgicalDate(currentDate)}
             </h1>
-            <div className="flex items-center justify-center space-x-2 mt-1">
-              {!isToday && (
-                <Button variant="ghost" size="sm" onClick={goToToday} className="hover-glow">
-                  Aujourd'hui
-                </Button>
-              )}
-              {!isTomorrow && (
-                <Button variant="ghost" size="sm" onClick={goToTomorrow} className="hover-glow">
-                  Demain
-                </Button>
-              )}
+            <div className="flex items-center space-x-2 mt-1">
+              <Button variant="ghost" size="sm" onClick={goToToday} className="hover-glow">
+                Aujourd'hui
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setShowCalendar(!showCalendar)} className="hover-glow">
                 <CalendarIcon className="h-4 w-4" />
               </Button>
-            </div>
-            {/* Indicateurs de date */}
-            <div className="flex justify-center space-x-2 mt-2">
-              {isToday && (
-                <Badge variant="default" className="bg-liturgical-primary text-white animate-pulse">
-                  Aujourd'hui
-                </Badge>
-              )}
-              {isTomorrow && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  Demain
-                </Badge>
-              )}
-              {isYesterday && (
-                <Badge variant="outline" className="text-gray-600">
-                  Hier
-                </Badge>
-              )}
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigateDate("next")} className="hover-lift">
