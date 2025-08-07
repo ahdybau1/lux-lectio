@@ -28,7 +28,8 @@ export function LiturgicalProvider({ children }: { children: ReactNode }) {
     setError(null)
 
     try {
-      const dateStr = date.toISOString().split("T")[0]
+      // Correction : toujours envoyer la date locale (minuit local) à l’API, sans décalage UTC
+      const dateStr = date.toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' })
       console.log("Chargement des données liturgiques pour:", dateStr)
 
       const data = await fetchLiturgicalReadings(dateStr)

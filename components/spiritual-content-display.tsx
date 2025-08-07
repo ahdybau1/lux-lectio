@@ -10,17 +10,17 @@ interface SpiritualContentDisplayProps {
 export function SpiritualContentDisplay({ content }: SpiritualContentDisplayProps) {
   return (
     <div className="space-y-6">
-      {/* Commentaires des lectures */}
+      {/* Commentaires des messes */}
       <Card className="border-blue-200 dark:border-slate-700">
         <CardHeader>
           <CardTitle className="text-blue-800 dark:text-blue-200 flex items-center">
             <Book className="h-5 w-5 mr-2" />
-            Commentaires des lectures
+            Commentaires des messes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2">Première lecture</h4>
+            <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2">Première messe</h4>
             <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
               {content.commentaires.premiere_lecture}
             </p>

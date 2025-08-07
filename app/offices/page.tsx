@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sun, Sunrise, Sunset, Moon, Star, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -62,6 +62,9 @@ const offices = [
 export default function OfficesPage() {
   const { liturgicalData, currentDate } = useLiturgical()
   const [selectedOffice, setSelectedOffice] = useState<string | null>(null)
+  const [officeData, setOfficeData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const formatLiturgicalDate = (date: Date) => {
     return date.toLocaleDateString("fr-FR", {
@@ -72,72 +75,35 @@ export default function OfficesPage() {
     })
   }
 
-  const generateOfficeContent = (officeId: string) => {
-    // Contenu simulé - dans une vraie app, ceci viendrait de l'API
-    const contents = {
-      "office-lectures": {
-        antienne: "Venez, adorons le Seigneur, le roi des rois.",
-        psaumes: [
-          {
-            numero: "Ps 94",
-            titre: "Invitation à louer Dieu",
-            antienne: "Aujourd'hui, ne fermez pas votre cœur, mais écoutez la voix du Seigneur.",
-            texte:
-              "Venez, crions de joie pour le Seigneur, acclamons notre Rocher, notre salut ! Allons jusqu'à lui en rendant grâce, par nos hymnes de fête acclamons-le !",
-          },
-        ],
-        lecture: {
-          reference: "1 Th 5, 1-11",
-          titre: "Lecture de la première lettre de saint Paul Apôtre aux Thessaloniciens",
-          texte:
-            "Pour ce qui est des temps et des moments, frères, vous n'avez pas besoin qu'on vous en écrive. Vous savez très bien vous-mêmes que le jour du Seigneur vient comme un voleur dans la nuit.",
-        },
-        responsoire: "R/ Le Seigneur est ma lumière et mon salut. V/ De qui aurais-je crainte ?",
-      },
-      laudes: {
-        antienne: "Que tout ce qui respire loue le Seigneur !",
-        psaumes: [
-          {
-            numero: "Ps 62",
-            titre: "L'âme qui cherche Dieu",
-            antienne: "Dieu, tu es mon Dieu, je te cherche dès l'aube.",
-            texte:
-              "Dieu, tu es mon Dieu, je te cherche dès l'aube : mon âme a soif de toi ; après toi languit ma chair, terre aride, altérée, sans eau.",
-          },
-        ],
-        cantique: {
-          reference: "Cantique de Zacharie (Lc 1, 68-79)",
-          antienne: "Béni soit le Seigneur, le Dieu d'Israël, qui visite et rachète son peuple.",
-          texte:
-            "Béni soit le Seigneur, le Dieu d'Israël, qui visite et rachète son peuple, et nous donne un sauveur puissant dans la maison de David, son serviteur.",
-        },
-        priere:
-          "Dieu qui fais briller sur nous la lumière de ce jour nouveau, accorde-nous de ne commettre aucun péché aujourd'hui et de marcher toujours dans tes voies. Par Jésus, le Christ, notre Seigneur. Amen.",
-      },
-      vepres: {
-        antienne: "Que ma prière devant toi s'élève comme un encens.",
-        psaumes: [
-          {
-            numero: "Ps 140",
-            titre: "Prière dans l'épreuve",
-            antienne: "Que ma prière monte devant toi comme l'encens.",
-            texte:
-              "Seigneur, je t'appelle : accours vers moi ! Entends ma voix qui t'appelle ! Que ma prière devant toi s'élève comme un encens, et mes mains, comme l'offrande du soir.",
-          },
-        ],
-        cantique: {
-          reference: "Cantique de Marie (Lc 1, 46-55)",
-          antienne: "Mon âme exalte le Seigneur, exulte mon esprit en Dieu, mon Sauveur !",
-          texte:
-            "Mon âme exalte le Seigneur, exulte mon esprit en Dieu, mon Sauveur ! Il s'est penché sur son humble servante ; désormais tous les âges me diront bienheureuse.",
-        },
-        priere:
-          "Dieu qui nous as donné de parvenir au soir de ce jour, garde-nous sans péché durant cette nuit, et fais que nous puissions te louer au matin. Par Jésus, le Christ, notre Seigneur. Amen.",
-      },
-    }
 
-    return contents[officeId as keyof typeof contents] || null
-  }
+  // Récupération dynamique de l'office sélectionné
+  useEffect(() => {
+    if (!selectedOffice) {
+      setOfficeData(null)
+      setError(null)
+      return
+    }
+    const fetchOffice = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const dateStr = currentDate.toISOString().split("T")[0]
+        // L'API attend "office-lectures" => "office_lectures"
+        const officeParam = selectedOffice.replace("-", "_")
+        const res = await fetch(`/api/aelf/offices?date=${dateStr}&office=${officeParam}`)
+        if (!res.ok) throw new Error("Erreur lors de la récupération de l'office")
+        const data = await res.json()
+        // On prend data.data si présent, sinon data directement (compatibilité)
+        setOfficeData(data.data || data)
+      } catch (e: any) {
+        setError(e.message || "Erreur inconnue")
+        setOfficeData(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOffice()
+  }, [selectedOffice, currentDate])
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -181,36 +147,41 @@ export default function OfficesPage() {
             </Button>
           </div>
 
-          {(() => {
-            const content = generateOfficeContent(selectedOffice)
-            if (!content) {
-              return (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Contenu de cet office en cours de développement.</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Bientôt disponible avec l'intégration complète de l'API liturgique.
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            }
-
-            return (
+          {/* Affichage dynamique de l'office */}
+          {loading && (
+            <Card><CardContent className="p-8 text-center">Chargement...</CardContent></Card>
+          )}
+          {error && (
+            <Card><CardContent className="p-8 text-center text-red-600">{error}</CardContent></Card>
+          )}
+          {!loading && !error && officeData && (
+            officeData.html ? (
+              <Card className="border-liturgical-primary/30">
+                <CardHeader>
+                  <CardTitle className="text-liturgical-primary">Office (données brutes du site AELF)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: officeData.html }} />
+                  {officeData.note && (
+                    <p className="mt-4 text-xs text-muted-foreground italic">{officeData.note}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
               <div className="space-y-6">
                 {/* Antienne d'ouverture */}
-                <Card className="border-liturgical-primary/30">
-                  <CardHeader>
-                    <CardTitle className="text-liturgical-primary">Antienne d'ouverture</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="italic text-liturgical-primary font-medium">{content.antienne}</p>
-                  </CardContent>
-                </Card>
-
+                {officeData.antienne && (
+                  <Card className="border-liturgical-primary/30">
+                    <CardHeader>
+                      <CardTitle className="text-liturgical-primary">Antienne d'ouverture</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="italic text-liturgical-primary font-medium">{officeData.antienne}</p>
+                    </CardContent>
+                  </Card>
+                )}
                 {/* Psaumes */}
-                {content.psaumes?.map((psaume, index) => (
+                {officeData.psaumes?.map((psaume: any, index: number) => (
                   <Card key={index}>
                     <CardHeader>
                       <CardTitle className="text-lg">
@@ -225,62 +196,58 @@ export default function OfficesPage() {
                     </CardContent>
                   </Card>
                 ))}
-
                 {/* Cantique */}
-                {content.cantique && (
+                {officeData.cantique && (
                   <Card className="border-amber-200 dark:border-amber-800">
                     <CardHeader>
-                      <CardTitle className="text-amber-800 dark:text-amber-200">{content.cantique.reference}</CardTitle>
+                      <CardTitle className="text-amber-800 dark:text-amber-200">{officeData.cantique.reference}</CardTitle>
                       <p className="text-sm italic text-amber-600 dark:text-amber-300">
-                        Ant. {content.cantique.antienne}
+                        Ant. {officeData.cantique.antienne}
                       </p>
                     </CardHeader>
                     <CardContent>
                       <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{content.cantique.texte}</p>
+                        <p>{officeData.cantique.texte}</p>
                       </div>
                     </CardContent>
                   </Card>
                 )}
-
                 {/* Lecture */}
-                {content.lecture && (
+                {officeData.lecture && (
                   <Card className="border-blue-200 dark:border-blue-800">
                     <CardHeader>
-                      <CardTitle className="text-blue-800 dark:text-blue-200">{content.lecture.titre}</CardTitle>
-                      <p className="text-sm text-blue-600 dark:text-blue-300">{content.lecture.reference}</p>
+                      <CardTitle className="text-blue-800 dark:text-blue-200">{officeData.lecture.titre}</CardTitle>
+                      <p className="text-sm text-blue-600 dark:text-blue-300">{officeData.lecture.reference}</p>
                     </CardHeader>
                     <CardContent>
                       <div className="prose prose-sm max-w-none dark:prose-invert">
-                        <p>{content.lecture.texte}</p>
+                        <p>{officeData.lecture.texte}</p>
                       </div>
                     </CardContent>
                   </Card>
                 )}
-
                 {/* Responsoire */}
-                {content.responsoire && (
+                {officeData.responsoire && (
                   <Card className="bg-liturgical-primary/5">
                     <CardContent className="p-4">
-                      <p className="text-liturgical-primary font-medium">{content.responsoire}</p>
+                      <p className="text-liturgical-primary font-medium">{officeData.responsoire}</p>
                     </CardContent>
                   </Card>
                 )}
-
                 {/* Prière */}
-                {content.priere && (
+                {officeData.priere && (
                   <Card className="border-liturgical-primary/30">
                     <CardHeader>
                       <CardTitle className="text-liturgical-primary">Prière</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="italic">{content.priere}</p>
+                      <p className="italic">{officeData.priere}</p>
                     </CardContent>
                   </Card>
                 )}
               </div>
             )
-          })()}
+          )}
         </div>
       )}
     </div>

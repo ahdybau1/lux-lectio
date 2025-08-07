@@ -41,7 +41,29 @@ feront leur offrande.</p>`,
   },
   messes: [
     {
+      id: "messe-1",
       nom: "Messe du mercredi de la 1ère semaine du temps ordinaire",
+      lectures: [
+        {
+          id: "lecture-1",
+          type: "lecture_1",
+          ...testLiturgicalData.lectures.lecture_1,
+        },
+        {
+          id: "psaume-1",
+          type: "psaume",
+          ...testLiturgicalData.lectures.psaume,
+        },
+        {
+          id: "evangile-1",
+          type: "evangile",
+          ...testLiturgicalData.lectures.evangile,
+        },
+      ],
     },
+    // Ajoute ici d'autres messes pour la démo si besoin
   ],
+}
+
+export const testMesses = testLiturgicalData.messes;
 }

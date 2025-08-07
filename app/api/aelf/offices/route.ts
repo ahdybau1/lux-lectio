@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log(`Récupération de l'office ${office} pour ${date}`)
 
-    // Endpoints possibles pour les offices
+    // Endpoints possibles pour les offices (AELF uniquement, pas de fallback)
     const endpoints = [
       `https://api.aelf.org/v1/offices/${office}/${date}`,
       `https://api.aelf.org/v1/heures/${office}/${date}`,
@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(data, {
             headers: {
               "Access-Control-Allow-Origin": "*",
-              "Cache-Control": "public, max-age=3600",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+              "Pragma": "no-cache",
+              "Expires": "0",
             },
           })
         }
@@ -48,15 +50,105 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback avec données simulées réalistes
-    const fallbackOfficeData = generateFallbackOfficeData(office, date)
-
-    return NextResponse.json(fallbackOfficeData, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "X-Data-Source": "fallback",
+    // Si aucun endpoint ne répond, tente de scraper le site officiel AELF
+    try {
+      const officeUrl = `https://www.aelf.org/${date}/romain/${office}`
+      const htmlResponse = await fetch(officeUrl, {
+        headers: {
+          "User-Agent": "LuxLectio/1.0",
+          "Accept": "text/html",
+        },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (htmlResponse.ok) {
+        const html = await htmlResponse.text()
+        // Extraction du bloc <div class="container-reading"> (nouvelle structure AELF)
+        const divMatch = html.match(/<div[^>]*class=["'][^"']*container-reading[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)
+        if (divMatch) {
+          const mainHtml = divMatch[1]
+          // Nettoyage basique : suppression des balises script/style et des attributs
+          let cleanHtml = mainHtml
+            .replace(/<script[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[\s\S]*?<\/style>/gi, "")
+            .replace(/\s?class="[^"]*"/gi, "")
+            .replace(/\s?id="[^"]*"/gi, "")
+            .replace(/\s?data-[^=]+="[^"]*"/gi, "")
+            .replace(/<a [^>]*href="[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "$1")
+            .replace(/<img[^>]*>/gi, "")
+          // On retourne le HTML nettoyé dans une propriété "html"
+          return NextResponse.json({
+            date,
+            office,
+            html: cleanHtml,
+            source: "aelf.org-scraper",
+            note: "Office récupéré par scraping HTML du site officiel AELF. Structure brute, non normalisée.",
+          }, {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+              "Pragma": "no-cache",
+              "Expires": "0",
+            },
+          })
+        }
+      }
+    } catch (scrapeError) {
+      console.error("Erreur scraping AELF:", scrapeError)
+    }
+    // Si le scraping échoue aussi, tente iBreviary (scraping HTML)
+    try {
+      // iBreviary propose les offices en HTML, mais l'URL dépend de la langue et du jour liturgique
+      // On tente le lien direct pour laudes en français
+      // Format attendu : https://www.ibreviary.com/m2/breviario.php?lang=fr&giorno=YYYYMMDD&orazione=laudes
+      const dateStr = date.replace(/-/g, "")
+      const ibreviaryUrl = `https://www.ibreviary.com/m2/breviario.php?lang=fr&giorno=${dateStr}&orazione=${office}`
+      const ibreviaryResponse = await fetch(ibreviaryUrl, {
+        headers: {
+          "User-Agent": "LuxLectio/1.0",
+          "Accept": "text/html",
+        },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (ibreviaryResponse.ok) {
+        const html = await ibreviaryResponse.text()
+        // Extraction du bloc principal : <div id="content">
+        const divMatch = html.match(/<div[^>]*id=["']content["'][^>]*>([\s\S]*?)<\/div>/i)
+        if (divMatch) {
+          let cleanHtml = divMatch[1]
+            .replace(/<script[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[\s\S]*?<\/style>/gi, "")
+            .replace(/\s?class="[^"]*"/gi, "")
+            .replace(/\s?id="[^"]*"/gi, "")
+            .replace(/\s?data-[^=]+="[^"]*"/gi, "")
+            .replace(/<a [^>]*href="[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, "$1")
+            .replace(/<img[^>]*>/gi, "")
+          return NextResponse.json({
+            date,
+            office,
+            html: cleanHtml,
+            source: "ibreviary.com-scraper",
+            note: "Office récupéré par scraping HTML du site iBreviary. Structure brute, non normalisée.",
+          }, {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+              "Pragma": "no-cache",
+              "Expires": "0",
+            },
+          })
+        }
+      }
+    } catch (ibreviaryError) {
+      console.error("Erreur scraping iBreviary:", ibreviaryError)
+    }
+    // Si tout échoue, retourne une erreur explicite
+    return NextResponse.json(
+      {
+        error: "Impossible de récupérer l'office depuis l'API AELF, le site AELF, ni iBreviary.",
+        details: `Aucune donnée disponible pour l'office ${office} à la date ${date}`,
       },
-    })
+      { status: 503 },
+    )
   } catch (error) {
     console.error("Erreur générale office:", error)
     return NextResponse.json(

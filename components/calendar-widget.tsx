@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLiturgical } from "@/components/liturgical-provider"
 import { cn } from "@/lib/utils"
 
-export function CalendarWidget() {
+export function CalendarWidget({ onDateSelected }: { onDateSelected?: (date: Date) => void }) {
   const { currentDate, setCurrentDate } = useLiturgical()
   const [viewDate, setViewDate] = useState(new Date(currentDate))
 
@@ -46,6 +46,7 @@ export function CalendarWidget() {
   const selectDate = (day: number) => {
     const selectedDate = new Date(year, month, day)
     setCurrentDate(selectedDate)
+    if (onDateSelected) onDateSelected(selectedDate)
   }
 
   const isToday = (day: number) => {

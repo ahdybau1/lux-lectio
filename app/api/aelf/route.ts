@@ -27,31 +27,46 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
-    // Normalisation des données pour notre application
+    // Nouvelle normalisation : expose tous les champs riches de chaque lecture
     const normalizedData = {
       informations: {
-        date,
-        jour_liturgique_nom: data.informations?.jour_liturgique_nom || "Jour liturgique",
+        ...data.informations,
+        date: data.informations?.date || date,
+        jour_liturgique_nom: data.informations?.jour_liturgique_nom || data.informations?.nom || "Jour liturgique",
         couleur: data.informations?.couleur || "vert",
         temps_liturgique: data.informations?.temps_liturgique || "ordinaire",
         semaine: data.informations?.semaine || "",
+        fete: data.informations?.fete || data.informations?.ligne2 || "",
       },
       messes: data.messes || [],
-      lectures: {},
+      lectures: {} as { [key: string]: any },
     }
 
-    // Extraction des lectures pour faciliter l'accès
+    // Extraction complète des lectures, indexées par type, avec tous les champs
     if (normalizedData.messes[0]?.lectures) {
       normalizedData.messes[0].lectures.forEach((lecture: any) => {
         if (lecture.type) {
-          normalizedData.lectures[lecture.type] = lecture
+          normalizedData.lectures[lecture.type] = {
+            type: lecture.type,
+            titre: lecture.titre || "",
+            contenu: lecture.contenu || "",
+            reference: lecture.reference || lecture.ref || "",
+            ref: lecture.ref || lecture.reference || "",
+            refrain_psalmique: lecture.refrain_psalmique || null,
+            verset_evangile: lecture.verset_evangile || null,
+            intro_lue: lecture.intro_lue || null,
+            ref_refrain: lecture.ref_refrain || null,
+            ref_verset: lecture.ref_verset || null,
+          }
         }
       })
     }
 
     return NextResponse.json(normalizedData, {
       headers: {
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
       },
     })
   } catch (error) {
@@ -80,19 +95,36 @@ export async function GET(request: NextRequest) {
             temps_liturgique: alternativeData.temps_liturgique || "ordinaire",
           },
           messes: alternativeData.messes || [],
-          lectures: {},
+          lectures: {} as { [key: string]: any },
         }
 
         // Extraction des lectures
         if (normalizedData.messes[0]?.lectures) {
           normalizedData.messes[0].lectures.forEach((lecture: any) => {
             if (lecture.type) {
-              normalizedData.lectures[lecture.type] = lecture
+              normalizedData.lectures[lecture.type] = {
+                type: lecture.type,
+                titre: lecture.titre || "",
+                contenu: lecture.contenu || "",
+                reference: lecture.reference || lecture.ref || "",
+                ref: lecture.ref || lecture.reference || "",
+                refrain_psalmique: lecture.refrain_psalmique || null,
+                verset_evangile: lecture.verset_evangile || null,
+                intro_lue: lecture.intro_lue || null,
+                ref_refrain: lecture.ref_refrain || null,
+                ref_verset: lecture.ref_verset || null,
+              }
             }
           })
         }
 
-        return NextResponse.json(normalizedData)
+        return NextResponse.json(normalizedData, {
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+          },
+        })
       }
     } catch (alternativeError) {
       console.error("Erreur avec l'endpoint alternatif:", alternativeError)

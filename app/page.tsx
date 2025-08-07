@@ -92,63 +92,64 @@ export default function HomePage() {
     )
   }
 
-  // Récupérer les lectures depuis la structure AELF
-  const readings = liturgicalData?.messes?.[0]?.lectures || []
+  // Récupérer les lectures depuis la structure AELF (priorité à l'objet lectures indexé par type)
+  let readings: any[] = []
+  if (liturgicalData?.lectures && Object.keys(liturgicalData.lectures).length > 0) {
+    // On récupère les lectures dans l'ordre classique
+    const order = ["lecture_1", "psaume", "lecture_2", "evangile"]
+    readings = order
+      .map((key) => liturgicalData.lectures[key])
+      .filter((r) => !!r)
+  } else if (liturgicalData?.messes?.[0]?.lectures) {
+    readings = liturgicalData.messes[0].lectures
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Header avec navigation */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 space-y-4 lg:space-y-0">
-        <div className="flex items-center space-x-4 animate-slide-in-left">
-          <Button variant="outline" size="sm" onClick={() => navigateDate("prev")} className="hover-lift">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-center">
-            <h1 className="text-2xl lg:text-3xl font-bold text-liturgical-primary">
-              {formatLiturgicalDate(currentDate)}
-            </h1>
-            <div className="flex items-center space-x-2 mt-1">
-              <Button variant="ghost" size="sm" onClick={goToToday} className="hover-glow">
-                Aujourd'hui
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setShowCalendar(!showCalendar)} className="hover-glow">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
+      {/* Header fixe avec calendrier */}
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-liturgical-primary/10 mb-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between px-4 py-2 space-y-4 lg:space-y-0">
+          <div className="flex items-center space-x-4 animate-slide-in-left">
+            <Button variant="outline" size="sm" onClick={() => navigateDate("prev")} className="hover-lift">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-center">
+              <h1 className="text-2xl lg:text-3xl font-bold text-liturgical-primary">
+                {formatLiturgicalDate(currentDate)}
+              </h1>
+              <div className="flex items-center space-x-2 mt-1">
+                <Button variant="ghost" size="sm" onClick={goToToday} className="hover-glow">
+                  Aujourd'hui
+                </Button>
+              </div>
             </div>
+            <Button variant="outline" size="sm" onClick={() => navigateDate("next")} className="hover-lift">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigateDate("next")} className="hover-lift">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="flex items-center space-x-2 animate-slide-in-right">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleFavorite}
-            className={`hover-glow ${isFavorite ? "text-red-500" : ""}`}
-          >
-            <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={shareReading} className="hover-glow">
-            <Share2 className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={refreshData} className="hover-glow">
-            <RefreshCw className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Calendrier (optionnel) */}
-        {showCalendar && (
-          <div className="lg:col-span-1 animate-slide-in-left">
-            <CalendarWidget />
+          <div className="flex items-center space-x-2 animate-slide-in-right">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFavorite}
+              className={`hover-glow ${isFavorite ? "text-red-500" : ""}`}
+            >
+              <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={shareReading} className="hover-glow">
+              <Share2 className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={refreshData} className="hover-glow">
+              <RefreshCw className="h-5 w-5" />
+            </Button>
           </div>
-        )}
+        </div>
+        {/* Calendrier supprimé de la page d'accueil, il reste accessible via la sidebar */}
+      </header>
 
+      <div className="grid grid-cols-1">
         {/* Contenu principal */}
-        <div className={`${showCalendar ? "lg:col-span-3" : "lg:col-span-4"}`}>
+        <div>
           {liturgicalData && (
             <div className="space-y-6">
               {/* Informations liturgiques */}

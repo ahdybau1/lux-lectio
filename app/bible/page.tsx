@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+// On ne charge plus statiquement geneseData, on utilisera un import dynamique
 import { Search, Book, Star, Bookmark, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ReadingCard } from "@/components/reading-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -79,60 +81,50 @@ export default function BiblePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<BibleVerse[]>([])
   const [chapterContent, setChapterContent] = useState<string>("")
+  const [chapterVerses, setChapterVerses] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [bookmarks, setBookmarks] = useState<string[]>([])
 
   const fetchChapterContent = async (bookId: string, chapter: number) => {
     setLoading(true)
     try {
-      // Simulation d'appel API AELF pour récupérer le contenu biblique
-      // Dans une vraie implémentation, ceci ferait appel à l'API AELF
-      const response = await fetch(`https://api.aelf.org/v1/bible/${bookId}/${chapter}`)
-
-      if (response.ok) {
-        const data = await response.json()
-        setChapterContent(data.content || "Contenu non disponible")
+      // On tente de charger dynamiquement le fichier JSON du livre
+      let data: any = null;
+      if (bookId === 'gn') {
+        data = await import(`../../public/genese.json`);
+      } else if (bookId === 'ex') {
+        data = await import(`../../public/exode.json`);
+      } else if (bookId === 'lv') {
+        data = await import(`../../public/levitique.json`);
+      } else if (bookId === 'nb') {
+        data = await import(`../../public/nombres.json`);
+      } else if (bookId === 'dt') {
+        data = await import(`../../public/deuteronome.json`);
+      }
+      if (data && data.chapitres) {
+        const chapObj = data.chapitres.find((c: any) => c.chapitre === chapter);
+        const verses = chapObj ? chapObj.versets : [];
+        setChapterVerses(verses);
+        setChapterContent("");
       } else {
-        // Contenu de démonstration
-        setChapterContent(generateDemoContent(bookId, chapter))
+        setChapterContent(generateDemoContent(bookId, chapter));
+        setChapterVerses([]);
       }
     } catch (error) {
-      console.error("Erreur lors du chargement:", error)
-      setChapterContent(generateDemoContent(bookId, chapter))
+      setChapterContent(generateDemoContent(bookId, chapter));
+      setChapterVerses([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const generateDemoContent = (bookId: string, chapter: number) => {
     const book = bibleBooks.find((b) => b.id === bookId)
     if (!book) return "Livre non trouvé"
-
-    if (bookId === "jn" && chapter === 1) {
-      return `<div class="space-y-4">
-        <p><span class="font-bold text-liturgical-primary">1</span> Au commencement était le Verbe, et le Verbe était auprès de Dieu, et le Verbe était Dieu.</p>
-        <p><span class="font-bold text-liturgical-primary">2</span> Il était au commencement auprès de Dieu.</p>
-        <p><span class="font-bold text-liturgical-primary">3</span> C'est par lui que tout est venu à l'existence, et rien de ce qui s'est fait ne s'est fait sans lui.</p>
-        <p><span class="font-bold text-liturgical-primary">4</span> En lui était la vie, et la vie était la lumière des hommes ;</p>
-        <p><span class="font-bold text-liturgical-primary">5</span> la lumière brille dans les ténèbres, et les ténèbres ne l'ont pas arrêtée.</p>
-        <p><span class="font-bold text-liturgical-primary">14</span> Et le Verbe s'est fait chair, il a habité parmi nous, et nous avons vu sa gloire, la gloire qu'il tient de son Père comme Fils unique, plein de grâce et de vérité.</p>
-      </div>`
-    }
-
-    if (bookId === "ps" && chapter === 23) {
-      return `<div class="space-y-4">
-        <p><span class="font-bold text-liturgical-primary">1</span> Le Seigneur est mon berger : je ne manque de rien.</p>
-        <p><span class="font-bold text-liturgical-primary">2</span> Sur des prés d'herbe fraîche, il me fait reposer. Il me mène vers les eaux tranquilles</p>
-        <p><span class="font-bold text-liturgical-primary">3</span> et me fait revivre ; il me conduit par le juste chemin pour l'honneur de son nom.</p>
-        <p><span class="font-bold text-liturgical-primary">4</span> Si je traverse les ravins de la mort, je ne crains aucun mal, car tu es avec moi : ton bâton me guide et me rassure.</p>
-        <p><span class="font-bold text-liturgical-primary">6</span> Grâce et bonheur m'accompagnent tous les jours de ma vie ; j'habiterai la maison du Seigneur pour la durée de mes jours.</p>
-      </div>`
-    }
-
     return `<div class="text-center py-8">
-      <Book className="h-12 w-12 text-liturgical-primary mx-auto mb-4" />
-      <p class="text-muted-foreground">Contenu de ${book.name} ${chapter} en cours de chargement...</p>
-      <p class="text-sm text-muted-foreground mt-2">Intégration complète avec l'API AELF en développement.</p>
+      <Book className=\"h-12 w-12 text-liturgical-primary mx-auto mb-4\" />
+      <p class=\"text-muted-foreground\">Contenu de ${book.name} ${chapter} non trouvé dans la Bible de Jérusalem.</p>
+      <p class=\"text-sm text-muted-foreground mt-2\">Merci de signaler ce bug ou d'essayer un autre chapitre.</p>
     </div>`
   }
 
@@ -345,79 +337,58 @@ export default function BiblePage() {
             </Card>
           )}
 
-          {/* Lecteur de chapitre */}
+          {/* Lecteur de chapitre + barre de navigation lectures */}
           {selectedBook && (
-            <Card className="liturgical-card hover-lift">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-liturgical-primary">
-                    {selectedBook.name} - Chapitre {selectedChapter}
-                  </CardTitle>
-                  <div className="flex items-center space-x-2">
-                    <Select
-                      value={selectedChapter.toString()}
-                      onValueChange={(value) => setSelectedChapter(Number.parseInt(value))}
+            <>
+              {/* Barre de navigation lectures - scroll horizontal */}
+              <div className="flex overflow-x-auto no-scrollbar gap-4 mb-6 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {["lecture_1", "psaume", "lecture_2", "evangile"].map((type, idx) => {
+                  // Lecture active = nette, autres = floues
+                  // Pour la démo, lecture_1 est active
+                  const isActive = idx === 0;
+                  return (
+                    <button
+                      key={type}
+                      className={`min-w-[140px] px-4 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none ${isActive ? "bg-liturgical-primary text-white shadow-lg" : "bg-liturgical-primary/10 text-liturgical-primary opacity-60 blur-sm"}`}
+                      style={{ filter: isActive ? "none" : "blur(2px)", opacity: isActive ? 1 : 0.6 }}
+                      onClick={() => {
+                        const el = document.getElementById(type);
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
                     >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((chapter) => (
-                          <SelectItem key={chapter} value={chapter.toString()}>
-                            {chapter}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleBookmark(`${selectedBook.name} ${selectedChapter}`)}
-                      className="hover-glow"
-                    >
-                      <Star
-                        className={`h-4 w-4 ${bookmarks.includes(`${selectedBook.name} ${selectedChapter}`) ? "fill-current text-liturgical-primary" : ""}`}
-                      />
-                    </Button>
-                  </div>
+                      {type === "lecture_1" && "Première lecture"}
+                      {type === "psaume" && "Psaume"}
+                      {type === "lecture_2" && "Deuxième lecture"}
+                      {type === "evangile" && "Évangile"}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Slider horizontal des lectures avec ReadingCard et données réelles du jour */}
+              <div className="w-full overflow-x-auto no-scrollbar pb-4">
+                <div className="flex flex-row gap-6 min-w-[600px] px-2">
+                  {(() => {
+                    // Extraire les lectures du jour depuis les données réelles (exemple)
+                    // Remplace lecturesData par ta source réelle (API, JSON, etc.)
+                    const lecturesData = [
+                      // lecture_1
+                      chapterVerses.find((v: any) => v.type === "lecture_1"),
+                      // psaume
+                      chapterVerses.find((v: any) => v.type === "psaume"),
+                      // lecture_2
+                      chapterVerses.find((v: any) => v.type === "lecture_2"),
+                      // evangile
+                      chapterVerses.find((v: any) => v.type === "evangile"),
+                    ].filter(Boolean);
+                    return lecturesData.map((lecture, idx) => (
+                      <div key={lecture.type || idx} className="flex-shrink-0 w-[340px]">
+                        <ReadingCard reading={lecture} type={lecture.type as any} className={idx === 0 ? "" : "opacity-60 blur-sm"} />
+                      </div>
+                    ));
+                  })()}
                 </div>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-liturgical-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Chargement du chapitre...</p>
-                  </div>
-                ) : (
-                  <div
-                    className="prose prose-sm max-w-none dark:prose-invert leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: chapterContent }}
-                  />
-                )}
-
-                {/* Navigation entre chapitres */}
-                <div className="flex justify-between mt-6 pt-4 border-t border-liturgical-primary/20">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedChapter(Math.max(1, selectedChapter - 1))}
-                    disabled={selectedChapter === 1}
-                    className="hover-lift"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Chapitre précédent
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedChapter(Math.min(selectedBook.chapters, selectedChapter + 1))}
-                    disabled={selectedChapter === selectedBook.chapters}
-                    className="hover-lift"
-                  >
-                    Chapitre suivant
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </>
           )}
 
           {/* Message d'accueil */}
