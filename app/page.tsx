@@ -13,7 +13,10 @@ export default function HomePage() {
   const { currentDate, liturgicalData, loading, error, setCurrentDate, refreshData } = useLiturgical()
   const [favorites, setFavorites] = useState<string[]>([])
   const [showCalendar, setShowCalendar] = useState(false)
+<<<<<<< HEAD
   const [selectedMassIndex, setSelectedMassIndex] = useState(0)
+=======
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
 
   const formatDate = (date: Date) => {
     return date.toISOString().split("T")[0]
@@ -93,6 +96,7 @@ export default function HomePage() {
     )
   }
 
+<<<<<<< HEAD
   // Récupérer les lectures depuis la structure AELF
   let readings: any[] = []
   
@@ -104,10 +108,21 @@ export default function HomePage() {
     readings = liturgicalData.messes[selectedMassIndex].lectures
   } else if (liturgicalData?.lectures && Object.keys(liturgicalData.lectures).length > 0) {
     // Fallback: utiliser l'objet lectures indexé par type si disponible
+=======
+  // Récupérer les lectures depuis la structure AELF (priorité à l'objet lectures indexé par type)
+  let readings: any[] = []
+  if (liturgicalData?.lectures && Object.keys(liturgicalData.lectures).length > 0) {
+    // On récupère les lectures dans l'ordre classique
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
     const order = ["lecture_1", "psaume", "lecture_2", "evangile"]
     readings = order
       .map((key) => liturgicalData.lectures[key])
       .filter((r) => !!r)
+<<<<<<< HEAD
+=======
+  } else if (liturgicalData?.messes?.[0]?.lectures) {
+    readings = liturgicalData.messes[0].lectures
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
   }
 
   return (
@@ -175,6 +190,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <CardTitle className="text-xl text-center text-liturgical-primary">
+<<<<<<< HEAD
                     {liturgicalData.messes?.[selectedMassIndex]?.nom || "Messe du jour"}
                   </CardTitle>
                   
@@ -197,6 +213,10 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
+=======
+                    {liturgicalData.messes?.[0]?.nom || "Messe du jour"}
+                  </CardTitle>
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
                 </CardHeader>
               </Card>
 
@@ -207,22 +227,30 @@ export default function HomePage() {
                   const readingType = reading.type as "lecture_1" | "psaume" | "lecture_2" | "evangile"
 
                   // Ne pas afficher les types inconnus
+<<<<<<< HEAD
                   if (![
                     "lecture_1",
                     "psaume",
                     "lecture_2",
                     "evangile"
                   ].includes(readingType)) {
+=======
+                  if (!["lecture_1", "psaume", "lecture_2", "evangile"].includes(readingType)) {
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
                     return null
                   }
 
                   return (
+<<<<<<< HEAD
                     <ReadingCard 
                       key={`${selectedMassIndex}-${index}`} 
                       reading={reading} 
                       type={readingType} 
                       className="animate-slide-in-right" 
                     />
+=======
+                    <ReadingCard key={index} reading={reading} type={readingType} className="animate-slide-in-right" />
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
                   )
                 })
               ) : (

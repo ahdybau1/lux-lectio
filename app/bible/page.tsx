@@ -340,6 +340,7 @@ export default function BiblePage() {
           {/* Lecteur de chapitre + barre de navigation lectures */}
           {selectedBook && (
             <>
+<<<<<<< HEAD
 
               {/* Affichage des versets du chapitre sélectionné */}
               <Card className="liturgical-card hover-lift">
@@ -406,6 +407,56 @@ export default function BiblePage() {
                   )}
                 </CardContent>
               </Card>
+=======
+              {/* Barre de navigation lectures - scroll horizontal */}
+              <div className="flex overflow-x-auto no-scrollbar gap-4 mb-6 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {["lecture_1", "psaume", "lecture_2", "evangile"].map((type, idx) => {
+                  // Lecture active = nette, autres = floues
+                  // Pour la démo, lecture_1 est active
+                  const isActive = idx === 0;
+                  return (
+                    <button
+                      key={type}
+                      className={`min-w-[140px] px-4 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none ${isActive ? "bg-liturgical-primary text-white shadow-lg" : "bg-liturgical-primary/10 text-liturgical-primary opacity-60 blur-sm"}`}
+                      style={{ filter: isActive ? "none" : "blur(2px)", opacity: isActive ? 1 : 0.6 }}
+                      onClick={() => {
+                        const el = document.getElementById(type);
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    >
+                      {type === "lecture_1" && "Première lecture"}
+                      {type === "psaume" && "Psaume"}
+                      {type === "lecture_2" && "Deuxième lecture"}
+                      {type === "evangile" && "Évangile"}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Slider horizontal des lectures avec ReadingCard et données réelles du jour */}
+              <div className="w-full overflow-x-auto no-scrollbar pb-4">
+                <div className="flex flex-row gap-6 min-w-[600px] px-2">
+                  {(() => {
+                    // Extraire les lectures du jour depuis les données réelles (exemple)
+                    // Remplace lecturesData par ta source réelle (API, JSON, etc.)
+                    const lecturesData = [
+                      // lecture_1
+                      chapterVerses.find((v: any) => v.type === "lecture_1"),
+                      // psaume
+                      chapterVerses.find((v: any) => v.type === "psaume"),
+                      // lecture_2
+                      chapterVerses.find((v: any) => v.type === "lecture_2"),
+                      // evangile
+                      chapterVerses.find((v: any) => v.type === "evangile"),
+                    ].filter(Boolean);
+                    return lecturesData.map((lecture, idx) => (
+                      <div key={lecture.type || idx} className="flex-shrink-0 w-[340px]">
+                        <ReadingCard reading={lecture} type={lecture.type as any} className={idx === 0 ? "" : "opacity-60 blur-sm"} />
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
             </>
           )}
 

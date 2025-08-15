@@ -1,7 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+<<<<<<< HEAD
 import { Sun, Sunrise, Sunset, Moon, Star, BookOpen, RefreshCw } from "lucide-react"
+=======
+import { Sun, Sunrise, Sunset, Moon, Star, BookOpen } from "lucide-react"
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -149,6 +153,7 @@ export default function OfficesPage() {
 
           {/* Affichage dynamique de l'office */}
           {loading && (
+<<<<<<< HEAD
             <Card>
               <CardContent className="p-8 text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-liturgical-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -167,6 +172,12 @@ export default function OfficesPage() {
                 </Button>
               </CardContent>
             </Card>
+=======
+            <Card><CardContent className="p-8 text-center">Chargement...</CardContent></Card>
+          )}
+          {error && (
+            <Card><CardContent className="p-8 text-center text-red-600">{error}</CardContent></Card>
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
           )}
           {!loading && !error && officeData && (
             officeData.html ? (
@@ -175,7 +186,11 @@ export default function OfficesPage() {
                   <CardTitle className="text-liturgical-primary">Office (données brutes du site AELF)</CardTitle>
                 </CardHeader>
                 <CardContent>
+<<<<<<< HEAD
                   <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-liturgical-primary prose-p:my-2 prose-hr:my-4 prose-h1:text-xl prose-h1:font-bold prose-h2:text-lg prose-h2:font-semibold prose-h2:text-liturgical-primary/80 prose-em:text-liturgical-secondary prose-em:italic" dangerouslySetInnerHTML={{ __html: officeData.html }} />
+=======
+                  <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: officeData.html }} />
+>>>>>>> 1276b8029e146ea5c26cf6bc05cd577a9f802537
                   {officeData.note && (
                     <p className="mt-4 text-xs text-muted-foreground italic">{officeData.note}</p>
                   )}
