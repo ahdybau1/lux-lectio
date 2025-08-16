@@ -33,6 +33,7 @@ export function LiturgicalProvider({ children }: { children: ReactNode }) {
       console.log("Chargement des données liturgiques pour:", dateStr)
 
       const data = await fetchLiturgicalReadings(dateStr)
+      console.log("Données brutes de l'API:", data);
       setLiturgicalData(data)
     } catch (err) {
       console.error("Erreur lors du chargement des données AELF:", err)
